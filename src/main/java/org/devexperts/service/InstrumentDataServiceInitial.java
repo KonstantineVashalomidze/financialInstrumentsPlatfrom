@@ -4,7 +4,6 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.devexperts.model.InstrumentData;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -18,12 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class InstrumentDataServiceModified {
-
-
-    @Autowired
-    private UserService userService;
-
+public class InstrumentDataServiceInitial {
     private final RestTemplate restTemplate;
     // Symbol names alongside with their observables
     private final Map<String, Observable<InstrumentData>> instrumentObservables;
@@ -38,7 +32,7 @@ public class InstrumentDataServiceModified {
     @Value("${api.mockdata.url}")
     private String apiUrl;
 
-    public InstrumentDataServiceModified(RestTemplate restTemplate) {
+    public InstrumentDataServiceInitial(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
         this.instrumentObservables = new ConcurrentHashMap<>();
         this.userSubscriptions = new ConcurrentHashMap<>();
@@ -46,7 +40,6 @@ public class InstrumentDataServiceModified {
         this.userSessionSubscriptions = new ConcurrentHashMap<>();
         this.instrumentCache = new ConcurrentHashMap<>();
     }
-
 
     public void subscribeToInstrument(
             String username,

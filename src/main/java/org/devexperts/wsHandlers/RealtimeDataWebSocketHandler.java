@@ -26,6 +26,9 @@ public class RealtimeDataWebSocketHandler extends TextWebSocketHandler {
         String username = (String) session.getAttributes()
                 .get("username");
         logger.info("{} User {} connected realtime with id {}", myLog, username, session.getId());
+        // Load user subscribed data from database initially
+
+
         instrumentDataService.startSendingUpdates(
                 username,
                 session
@@ -42,8 +45,7 @@ public class RealtimeDataWebSocketHandler extends TextWebSocketHandler {
                 .get("username");
         logger.info("{} Closed connection for user {} with id {}", myLog, username, session.getId());
         instrumentDataService.stopSendingUpdates(
-                username,
-                session
+                username
         );
         logger.info("{} Stopped sending updates to user {} with id {}", myLog, username, session.getId());
     }
