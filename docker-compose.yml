@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  mockdataservice:
+    build:
+      context: ../MockDataService
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+
+  mainspringbootapp:
+    build:
+      context: ../MainSpringBootApp
+    ports:
+      - "8081:8081"
+    networks:
+      - app-network
+    depends_on:
+      - mockdataservice
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+
+  redis:
+    image: redis:6.0
+    ports:
+      - "10593:10593"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
