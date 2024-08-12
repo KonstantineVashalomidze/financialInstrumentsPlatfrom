@@ -75,10 +75,6 @@ const DashboardPage = () => {
                     setSubscriptions([]);  // Set to empty array if there's an error
                 });
 
-            subscriptions.forEach((symbol) => {
-                subscriptionSocket.send(`SUBSCRIBE: ${symbol}`);
-            });
-
         };
 
         subscriptionSocket.onclose = (event) => {
@@ -146,10 +142,6 @@ const DashboardPage = () => {
             { symbol: 'PYPL' },
         ];
         setAvailableSymbols(symbols);
-
-
-
-
     }, []);
 
     const toggleSubscription = (symbol) => {
