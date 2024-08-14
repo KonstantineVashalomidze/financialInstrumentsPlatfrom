@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
-import { LoginForm } from '../components/LoginForm';
-import { login } from '../utils/api';
+import {LoginForm} from '../components/LoginForm';
+import {login} from '../utils/api';
 
 
 const LoginContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 90vh
 `;
 
 const LoginTitle = styled.h1`
-  margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
 `;
 
 const RegisterLink = styled.button`
-  margin-top: 1rem;
-  background-color: transparent;
-  border: none;
-  color: blue;
-  text-decoration: underline;
-  cursor: pointer;
+    margin-top: 1rem;
+    background-color: transparent;
+    border: none;
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
 `;
 
 const LoginPage = () => {
@@ -35,8 +35,7 @@ const LoginPage = () => {
         try {
             const response = await login(username, password);
             // and navigate to the dashboard
-            if (response.token)
-            {
+            if (response.token) {
                 localStorage.setItem('token', response.token);
                 navigate('/dashboard');
             }

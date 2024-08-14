@@ -1,10 +1,11 @@
 import React from 'react';
-import {BrowserRouter as Router, Route, Navigate, Routes} from 'react-router-dom';
+import {BrowserRouter as Router, Navigate, Route, Routes} from 'react-router-dom';
 
 // Import your components
 import LoginPage from '../pages/LoginPage';
 import RegistrationPage from '../pages/RegistrationPage';
 import DashboardPage from '../pages/DashboardPage';
+import ChatPage from "../pages/ChatPage";
 
 // Function to check if the user has a valid JWT token
 const hasValidToken = () => {
@@ -14,23 +15,31 @@ const hasValidToken = () => {
 };
 
 // Protected route component
-const ProtectedRoute = ({ children }) => {
-    return hasValidToken() ? children : <Navigate to="/login" />;
+const ProtectedRoute = ({children}) => {
+    return hasValidToken() ? children : <Navigate to="/login"/>;
 };
 
 const AppRoutes = () => (
     <Router>
         <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage/>}/>
             <Route
                 path="/dashboard"
                 element={
                     <ProtectedRoute>
-                        <DashboardPage />
+                        <DashboardPage/>
                     </ProtectedRoute>
                 }
             />
-            <Route path="/register" element={<RegistrationPage />} />
+            <Route
+                path="/chat"
+                element={
+                    <ProtectedRoute>
+                        <ChatPage/>
+                    </ProtectedRoute>
+                }
+            />
+            <Route path="/register" element={<RegistrationPage/>}/>
         </Routes>
     </Router>
 );

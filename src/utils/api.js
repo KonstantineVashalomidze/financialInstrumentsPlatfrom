@@ -6,12 +6,14 @@ export const login = async (username, password) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({username, password}),
     });
 
     if (!response.ok) {
         throw new Error('Login failed');
     }
+
+    localStorage.setItem('username', username);
 
     const data = await response.json();
     return data;
@@ -23,7 +25,7 @@ export const register = async (username, password) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({username, password}),
     });
 
     if (!response.ok) {
@@ -45,7 +47,23 @@ export const getMessageHistoryBetween = async (who) => {
         throw new Error('Error fetching data');
     }
 
-    return await response.json();
+    return await response.json(); // List of message objects indicating sender content and recipient in it
+}
+
+
+export const getUsernames = async () => {
+    const response = await fetch("http://localhost:8081/api/users", {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Error fetching data');
+    }
+
+    return await response.json(); // list of usernames
+
 }
 
 

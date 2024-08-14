@@ -1,28 +1,6 @@
+// LoginForm.js
 import React from 'react';
-import styled from 'styled-components';
-
-const FormContainer = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 400px;
-  width: 100%;
-`;
-
-const FormInput = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
-const SubmitButton = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: blue;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-`;
+import {Box, Button, TextField} from '@mui/material';
 
 export const LoginForm = ({
                               username,
@@ -32,25 +10,44 @@ export const LoginForm = ({
                               onSubmit,
                           }) => {
     return (
-        <FormContainer
+        <Box
+            component="form"
             onSubmit={(e) => {
                 e.preventDefault();
                 onSubmit();
             }}
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                maxWidth: 400,
+                width: '100%',
+            }}
         >
-            <FormInput
+            <TextField
                 type="text"
-                placeholder="Username"
+                label="Username"
+                variant="outlined"
                 value={username}
                 onChange={(e) => onUsernameChange(e.target.value)}
+                fullWidth
             />
-            <FormInput
+            <TextField
                 type="password"
-                placeholder="Password"
+                label="Password"
+                variant="outlined"
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
+                fullWidth
             />
-            <SubmitButton type="submit">Login</SubmitButton>
-        </FormContainer>
+            <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+            >
+                Login
+            </Button>
+        </Box>
     );
 };

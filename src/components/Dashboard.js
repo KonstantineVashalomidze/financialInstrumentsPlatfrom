@@ -1,32 +1,37 @@
 import React from 'react';
-import styled from 'styled-components';
+import { Grid, Card, CardContent, Typography, Box } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
-const DashboardContainer = styled.div`
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-`;
-
-const InstrumentCard = styled.div`
-    width: 200px;
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    background-color: ${(props) => (props.subscribed == 'true' ? '#d4edda' : '#f8d7da')};
-`;
+const StyledCard = styled(Card)(({ theme, subscribed }) => ({
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: subscribed ? theme.palette.success.light : theme.palette.error.light,
+}));
 
 const Dashboard = ({ data, subscriptions }) => {
     return (
-        <DashboardContainer>
-            {data.map((item) => (
-                <InstrumentCard key={item.symbol} subscribed={subscriptions.includes(item.symbol).toString()}>
-                    <h3>{item.symbol}</h3>
-                    <p>Price: {typeof item.price === 'number' ? item.price.toFixed(2) : 'N/A'}</p>
-                    <p>Time: {new Date(item.timeStamp).toLocaleString()}</p>
-                </InstrumentCard>
-            ))}
-        </DashboardContainer>
+        <Box sx={{ flexGrow: 1, p: 3 }}>
+            <Grid container spacing={3}>
+                {data.map((item) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={item.symbol}>
+                        <StyledCard subscribed={subscriptions.includes(item.symbol)}>
+                            <CardContent>
+                                <Typography variant="h5" component="div" gutterBottom>
+                                    {item.symbol}
+                                </Typography>
+                                <Typography variant="body1" color="text.secondary">
+                                    Price: {typeof item.price === 'number' ? item.price.toFixed(2) : 'N/A'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Time: {new Date(item.timeStamp).toLocaleString()}
+                                </Typography>
+                            </CardContent>
+                        </StyledCard>
+                    </Grid>
+                ))}
+            </Grid>
+        </Box>
     );
 };
 
