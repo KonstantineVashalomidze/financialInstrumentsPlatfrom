@@ -32,7 +32,7 @@ public class InstrumentDataService {
     private final Map<String, Map<String, Disposable>> userSubscriptions;
     private final Map<String, WebSocketSession> userSessions;
     private final Map<String, InstrumentData> instrumentCache;
-    private static final int POPULARITY_THRESHOLD = 5;
+
     @Value("${api.mockdata.url}")
     private String apiUrl;
 
@@ -125,7 +125,7 @@ public class InstrumentDataService {
         int subscriberCount = (int) userSubscriptions.values().stream()
                 .filter(symbols -> symbols.containsKey(symbol))
                 .count();
-        return subscriberCount >= POPULARITY_THRESHOLD;
+        return subscriberCount >= 5; // More than 5 client subscribes this instrument could be changed
     }
 
     private void subscribeSessionToSymbol(String username, WebSocketSession session, String symbol, Observable<InstrumentData> observable) {

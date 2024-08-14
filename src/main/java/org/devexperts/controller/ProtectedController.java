@@ -2,6 +2,7 @@ package org.devexperts.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.devexperts.model.Message;
+import org.devexperts.model.User;
 import org.devexperts.service.MessageService;
 import org.devexperts.service.UserService;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -31,6 +33,22 @@ public class ProtectedController {
         List<String> subscriptions = userService.getUserByUsername(username).getSubscribedSymbols();
         logger.info("{} User {} got subscribed symbols {}", myLog, username, subscriptions);
         return subscriptions;
+    }
+
+
+    @GetMapping("/users")
+    public List<String> getUsernames(
+            HttpServletRequest request
+    ) {
+        String username = (String) request.getAttribute("username");
+        logger.info("{} User {} requested list of available usernames", myLog, username);
+
+        return userService
+                .getAllUsernames()
+                .stream()
+                .map(User::getUsername)
+                .filter(e -> !e.equals(username))
+                .toList();
     }
 
 
