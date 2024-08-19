@@ -4,6 +4,7 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
@@ -15,10 +16,10 @@ import org.springframework.data.mongodb.core.index.IndexOperations;
 @Configuration
 public class MongoConfig extends AbstractMongoClientConfiguration {
 
-    // TODO: these two are hardcoded need to extract in .env file
-    // TODO: need more descriptive db name
-    private static final String DATABASE_NAME = "Cluster0";
-    private static final String CONNECTION_STRING = "mongodb+srv://vashalomidzekonstantine:QuC5BLoX59mn137U@cluster0.tvzxq.mongodb.net/";
+    @Value("${mongoconfig.database.name:Cluster0}")
+    private String DATABASE_NAME;
+    @Value("${mongoconfig.connection.string:mongodb+srv://vashalomidzekonstantine:QuC5BLoX59mn137U@cluster0.tvzxq.mongodb.net/}")
+    private String CONNECTION_STRING;
 
     @Bean
     public MongoTemplate mongoTemplate() throws Exception {

@@ -3,11 +3,8 @@ package org.devexperts.service;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import org.devexperts.controller.AuthController;
 import org.devexperts.model.InstrumentData;
 import org.devexperts.model.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -23,16 +20,13 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class InstrumentDataService {
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-    private static final String myLog = "[!!!MY_LOG!!!]";
-    @Autowired
-    private UserService userService;
     private final RestTemplate restTemplate;
     private final Map<String, Observable<InstrumentData>> instrumentObservables;
     private final Map<String, Map<String, Disposable>> userSubscriptions;
     private final Map<String, WebSocketSession> userSessions;
     private final Map<String, InstrumentData> instrumentCache;
-
+    @Autowired
+    private UserService userService;
     @Value("${api.mockdata.url}")
     private String apiUrl;
 
@@ -64,6 +58,68 @@ public class InstrumentDataService {
         WebSocketSession session = userSessions.get(username);
         if (session != null) {
             sendUpdate(session, data);
+        }
+    }
+
+    private Observable<InstrumentData> createInstrumentObservable(String symbol) {
+        return Observable.interval(0, 5, TimeUnit.SECONDS)
+                .flatMap(k -> Observable.fromCallable(() -> fetchInstrumentData(symbol))
+                        .subscribeOn(Schedulers.io()))
+                .doOnNext(data -> {
+                    if (isPopularInstrument(symbol)) {
+                        instrumentCache.put(symbol, data);
+                    }
+                })
+                .share();
+    }
+
+    private void subscribeSessionToSymbol(String username, WebSocketSession session, String symbol, Observable<InstrumentData> observable) {
+        Disposable disposable = observable.subscribe(
+                data -> sendUpdate(session, data),
+                error -> handleError(session, error)
+        );
+        userSubscriptions.computeIfAbsent(username, k -> new ConcurrentHashMap<>())
+                .put(symbol, disposable);
+    }
+
+    private synchronized void sendUpdate(WebSocketSession session, InstrumentData data) {
+        if (session.isOpen()) {
+            try {
+                session.sendMessage(new TextMessage(data.toString()));
+            } catch (IOException e) {
+
+            }
+        }
+    }
+
+    private InstrumentData fetchInstrumentData(String symbol) {
+        InstrumentData cachedData = instrumentCache.get(symbol);
+        if (cachedData != null) {
+            return cachedData;
+        }
+
+        String url = apiUrl + "/" + symbol;
+        InstrumentData data = restTemplate.getForObject(url, InstrumentData.class);
+
+        if (isPopularInstrument(symbol)) {
+            instrumentCache.put(symbol, data);
+        }
+
+        return data;
+    }
+
+    private boolean isPopularInstrument(String symbol) {
+        int subscriberCount = (int) userSubscriptions.values().stream()
+                .filter(symbols -> symbols.containsKey(symbol))
+                .count();
+        return subscriberCount >= 5; // More than 5 client subscribes this instrument could be changed
+    }
+
+    private void handleError(WebSocketSession session, Throwable error) {
+        try {
+            session.sendMessage(new TextMessage("Error: " + error.getMessage()));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -107,68 +163,5 @@ public class InstrumentDataService {
                 }
             });
         }
-    }
-
-    private Observable<InstrumentData> createInstrumentObservable(String symbol) {
-        return Observable.interval(0, 5, TimeUnit.SECONDS)
-                .flatMap(k -> Observable.fromCallable(() -> fetchInstrumentData(symbol))
-                        .subscribeOn(Schedulers.io()))
-                .doOnNext(data -> {
-                    if (isPopularInstrument(symbol)) {
-                        instrumentCache.put(symbol, data);
-                    }
-                })
-                .share();
-    }
-
-    private boolean isPopularInstrument(String symbol) {
-        int subscriberCount = (int) userSubscriptions.values().stream()
-                .filter(symbols -> symbols.containsKey(symbol))
-                .count();
-        return subscriberCount >= 5; // More than 5 client subscribes this instrument could be changed
-    }
-
-    private void subscribeSessionToSymbol(String username, WebSocketSession session, String symbol, Observable<InstrumentData> observable) {
-        Disposable disposable = observable.subscribe(
-                data -> sendUpdate(session, data),
-                error -> handleError(session, error)
-        );
-        logger.info("{} username {} symbol {}", myLog, username, symbol);
-        userSubscriptions.computeIfAbsent(username, k -> new ConcurrentHashMap<>())
-                .put(symbol, disposable);
-    }
-
-    private synchronized void sendUpdate(WebSocketSession session, InstrumentData data) {
-        if (session.isOpen()) {
-            try {
-                session.sendMessage(new TextMessage(data.toString()));
-            } catch (IOException e) {
-                logger.error("Error sending update to session", e);
-            }
-        }
-    }
-
-    private void handleError(WebSocketSession session, Throwable error) {
-        try {
-            session.sendMessage(new TextMessage("Error: " + error.getMessage()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private InstrumentData fetchInstrumentData(String symbol) {
-        InstrumentData cachedData = instrumentCache.get(symbol);
-        if (cachedData != null) {
-            return cachedData;
-        }
-
-        String url = apiUrl + "/" + symbol;
-        InstrumentData data = restTemplate.getForObject(url, InstrumentData.class);
-
-        if (isPopularInstrument(symbol)) {
-            instrumentCache.put(symbol, data);
-        }
-
-        return data;
     }
 }

@@ -1,47 +1,52 @@
 package org.devexperts.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.devexperts.model.Message;
 import org.devexperts.model.User;
 import org.devexperts.service.MessageService;
 import org.devexperts.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:3000")
 public class ProtectedController {
-    private static final Logger logger = LoggerFactory.getLogger(ProtectedController.class);
-    private static final String myLog = "[!!!MY_LOG!!!]";
     @Autowired
     private MessageService messageService;
     @Autowired
     private UserService userService;
 
+
+    @Operation(summary = "Retrieve subscribed symbols", description = "Returns a list of subscribed symbols for the authenticated user.")
+    @ApiResponse(responseCode = "200", description = "Successful operation",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @GetMapping("/subscriptions")
     public List<String> getUserSubscriptions(
             HttpServletRequest request
     ) {
         String username = (String) request.getAttribute("username");
-        logger.info("{} User {} requested his / her subscriptions", myLog, username);
         List<String> subscriptions = userService.getUserByUsername(username).getSubscribedSymbols();
-        logger.info("{} User {} got subscribed symbols {}", myLog, username, subscriptions);
         return subscriptions;
     }
 
-
+    @Operation(summary = "Retrieve all usernames", description = "Returns a list of all usernames except the authenticated user's.")
+    @ApiResponse(responseCode = "200", description = "Successful operation",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @GetMapping("/users")
     public List<String> getUsernames(
             HttpServletRequest request
     ) {
         String username = (String) request.getAttribute("username");
-        logger.info("{} User {} requested list of available usernames", myLog, username);
 
         return userService
                 .getAllUsernames()
@@ -51,27 +56,19 @@ public class ProtectedController {
                 .toList();
     }
 
-
-    /**
-     * Endpoint for retrieving conversation history between the initiator of the request and recipient which is the
-     * one at the second end of the conversation
-     *
-     * @param recipient with who do we have conversation.
-     * @param request
-     * @return List of message objects indicating sender content and recipient in it.
-     */
-    /* curl -X GET "http://localhost:8081/api/history?recipient=newuser2" -H "Authorization: Bearer YOUR_JWT_TOKEN" */
+    @Operation(summary = "Retrieve message history", description = "Returns the message history between the authenticated user and a specified recipient.")
+    @ApiResponse(responseCode = "200", description = "Successful operation",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Message.class))))
+    @ApiResponse(responseCode = "401", description = "Unauthorized")
     @GetMapping("/history")
     public List<Message> getMessageHistory(
             @RequestParam("recipient") String recipient,
             HttpServletRequest request
     ) {
         String sender = (String) request.getAttribute("username");
-        logger.info("{} User {} requested his/her messages with user {}", myLog, sender, recipient);
 
         List<Message> messages = messageService.getMessagesBetweenUsers(sender, recipient);
 
-        logger.info("{} User {} got messages {} with user {}", myLog, sender, messages, recipient);
 
         return messages;
     }

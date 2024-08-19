@@ -1,8 +1,11 @@
 package org.devexperts.interceptor;
 
+import org.apache.el.parser.Token;
 import org.devexperts.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -12,12 +15,14 @@ import java.util.Map;
 /* Example WebSocket URL:
  * ws://localhost:8081/ws/subscribe?token=JWT_TOKEN
  */
+@Component
 public class JwtWebSocketInterceptor implements HandshakeInterceptor {
 
-    private JwtUtil jwtUtil;
-
-    public JwtWebSocketInterceptor(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    private TokenCache tokenCache;
+    private TokenExtractor tokenExtractor;
+    public JwtWebSocketInterceptor(TokenCache tokenCache) {
+        tokenExtractor = new WebSocketTokenExtractor();
+        this.tokenCache = tokenCache;
     }
 
     @Override
@@ -27,10 +32,10 @@ public class JwtWebSocketInterceptor implements HandshakeInterceptor {
             WebSocketHandler wsHandler,
             Map<String, Object> attributes
     ) {
-        String token = extractToken(request);
+        String token = tokenExtractor.extractToken(request);
         if (token != null) {
-            String username = jwtUtil.extractUsername(token);
-            if (jwtUtil.validateToken(token, username)) {
+            String username = tokenCache.validateToken(token);
+            if (username != null) {
                 attributes.put("username", username);
                 return true;
             }
@@ -48,11 +53,4 @@ public class JwtWebSocketInterceptor implements HandshakeInterceptor {
 
     }
 
-    private String extractToken(ServerHttpRequest request) {
-        // Extract the query parameters from the request URI
-        Map<String, String> queryParams = UriComponentsBuilder.fromUri(request.getURI()).build().getQueryParams().toSingleValueMap();
-
-        // Retrieve the token from the query parameters
-        return queryParams.get("token");
-    }
 }

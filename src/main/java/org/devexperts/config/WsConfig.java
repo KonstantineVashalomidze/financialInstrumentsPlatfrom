@@ -1,5 +1,6 @@
 package org.devexperts.config;
 
+import org.devexperts.interceptor.JwtInterceptor;
 import org.devexperts.interceptor.JwtWebSocketInterceptor;
 import org.devexperts.service.InstrumentDataService;
 import org.devexperts.service.MessageService;
@@ -26,8 +27,11 @@ public class WsConfig implements WebSocketConfigurer {
     @Autowired
     private InstrumentDataService instrumentDataService;
 
+
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtWebSocketInterceptor jwtWebSocketInterceptor;
+
+
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -35,7 +39,7 @@ public class WsConfig implements WebSocketConfigurer {
                         new ChatHandler(messageService),
                         "/ws/chat"
                 )
-                .addInterceptors(new JwtWebSocketInterceptor(jwtUtil))
+                .addInterceptors(jwtWebSocketInterceptor)
                 .setAllowedOrigins("http://localhost:3000");
 
 
@@ -43,14 +47,14 @@ public class WsConfig implements WebSocketConfigurer {
                         new InstrumentHandler(instrumentDataService, userService),
                         "/ws/subscribe"
                 )
-                .addInterceptors(new JwtWebSocketInterceptor(jwtUtil))
+                .addInterceptors(jwtWebSocketInterceptor)
                 .setAllowedOrigins("http://localhost:3000");
 
         registry.addHandler(
                         new RealtimeDataWebSocketHandler(instrumentDataService),
                         "/ws/realtime"
                 )
-                .addInterceptors(new JwtWebSocketInterceptor(jwtUtil))
+                .addInterceptors(jwtWebSocketInterceptor)
                 .setAllowedOrigins("http://localhost:3000");
     }
 }

@@ -1,9 +1,6 @@
 package org.devexperts.wsHandlers;
 
-import org.devexperts.controller.AuthController;
 import org.devexperts.service.InstrumentDataService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
@@ -14,8 +11,6 @@ public class RealtimeDataWebSocketHandler extends TextWebSocketHandler {
 
     private final InstrumentDataService instrumentDataService;
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-    private static final String myLog = "[!!!MY_LOG!!!]";
 
     public RealtimeDataWebSocketHandler(InstrumentDataService instrumentDataService) {
         this.instrumentDataService = instrumentDataService;
@@ -25,15 +20,10 @@ public class RealtimeDataWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) {
         String username = (String) session.getAttributes()
                 .get("username");
-        logger.info("{} User {} connected realtime with id {}", myLog, username, session.getId());
-        // Load user subscribed data from database initially
-
-
         instrumentDataService.startSendingUpdates(
                 username,
                 session
         );
-        logger.info("{} Started sending updates to user {} with id {}", myLog, username, session.getId());
     }
 
     @Override
@@ -43,10 +33,8 @@ public class RealtimeDataWebSocketHandler extends TextWebSocketHandler {
     ) {
         String username = (String) session.getAttributes()
                 .get("username");
-        logger.info("{} Closed connection for user {} with id {}", myLog, username, session.getId());
         instrumentDataService.stopSendingUpdates(
                 username
         );
-        logger.info("{} Stopped sending updates to user {} with id {}", myLog, username, session.getId());
     }
 }

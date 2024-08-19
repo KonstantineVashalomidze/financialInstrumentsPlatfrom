@@ -15,7 +15,7 @@ public class User {
     @Indexed(unique = true)
     private String username;
 
-    private String password;  // Consider using a separate PasswordEncoder for security
+    private String password;
 
     @Indexed
     private List<String> subscribedSymbols;
@@ -34,7 +34,6 @@ public class User {
         this.updatedAt = new Date();
     }
 
-    // Getters and setters
 
     public String getId() {
         return id;
@@ -83,5 +82,17 @@ public class User {
 
     public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", subscribedSymbols=" + subscribedSymbols +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
     }
 }

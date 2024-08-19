@@ -31,18 +31,15 @@ public class Message {
     @DBRef
     private User receiver;
 
-    // Constructor using usernames
     public Message(String senderUsername, String receiverUsername, String content) {
         this.senderUsername = senderUsername;
         this.receiverUsername = receiverUsername;
         this.content = content;
     }
 
-    // No-args constructor (required by Spring Data)
     protected Message() {
     }
 
-    // Getters and setters
 
     public String getId() {
         return id;
@@ -92,5 +89,18 @@ public class Message {
     public void setReceiver(User receiver) {
         this.receiver = receiver;
         this.receiverUsername = receiver.getUsername();
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "id='" + id + '\'' +
+                ", senderUsername='" + senderUsername + '\'' +
+                ", receiverUsername='" + receiverUsername + '\'' +
+                ", content='" + content + '\'' +
+                ", timestamp=" + timestamp +
+                ", sender=" + sender +
+                ", receiver=" + receiver +
+                '}';
     }
 }
