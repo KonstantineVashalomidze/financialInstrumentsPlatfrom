@@ -1,11 +1,22 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {getMessageHistoryBetween, getUsernames} from '../utils/api';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { getMessageHistoryBetween, getUsernames } from '../utils/api';
 import UserList from '../components/UserList';
 import ChatWindow from '../components/ChatWindow';
 import MessageInput from '../components/MessageInput';
-import {useNavigate} from "react-router-dom";
-import {Box, Button, Grid, Paper} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { Box, Button, Grid, Paper } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
+// Debounce function
+const debounce = (func, delay) => {
+    let inDebounce;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(inDebounce);
+        inDebounce = setTimeout(() => func.apply(context, args), delay);
+    }
+};
 
 const ChatPage = () => {
     const [users, setUsers] = useState([]);
@@ -14,31 +25,23 @@ const ChatPage = () => {
     const currentUser = localStorage.getItem('username');
     const token = localStorage.getItem('token');
     const socketRef = useRef(null);
+    const isConnecting = useRef(false);
     const navigate = useNavigate();
-
-    console.log('ChatPage rendered. Current user:', currentUser);
 
     const handleBackToDashboard = () => {
         navigate('/dashboard');
     };
 
-    useEffect(() => {
-        console.log('Initial useEffect running');
-        const fetchUsers = async () => {
-            try {
-                const usernames = await getUsernames();
-                console.log('Fetched usernames:', usernames);
-                setUsers(usernames.filter(username => username !== currentUser));
-            } catch (error) {
-                console.error('Error fetching users:', error);
-            }
-        };
-        fetchUsers();
+    const connectWebSocket = useCallback(() => {
+        if (isConnecting.current) return;
+        isConnecting.current = true;
 
+        console.log('Attempting to connect WebSocket');
         socketRef.current = new WebSocket(`ws://localhost:8081/ws/chat?token=${token}`);
 
         socketRef.current.onopen = () => {
             console.log('WebSocket connection established');
+            isConnecting.current = false;
         };
 
         socketRef.current.onmessage = (event) => {
@@ -81,18 +84,39 @@ const ChatPage = () => {
 
         socketRef.current.onerror = (error) => {
             console.error('WebSocket error:', error);
+            isConnecting.current = false;
         };
 
         socketRef.current.onclose = () => {
             console.log('WebSocket connection closed');
+            isConnecting.current = false;
         };
+    }, [token]);
+
+    const debouncedConnect = useCallback(debounce(connectWebSocket, 300), [connectWebSocket]);
+
+    useEffect(() => {
+        console.log('Initial useEffect running');
+        const fetchUsers = async () => {
+            try {
+                const usernames = await getUsernames();
+                console.log('Fetched usernames:', usernames);
+                setUsers(usernames.filter(username => username !== currentUser));
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+        fetchUsers();
+
+        debouncedConnect();
 
         return () => {
             if (socketRef.current) {
                 socketRef.current.close();
             }
+            isConnecting.current = false;
         };
-    }, [currentUser, token]);
+    }, [currentUser, debouncedConnect]);
 
     useEffect(() => {
         console.log('Selected user changed:', selectedUser);
@@ -104,8 +128,8 @@ const ChatPage = () => {
                     if (history && Array.isArray(history)) {
                         const formattedMessages = history.map(msg => {
                             const timestamp = msg && msg._id
-                                ? new Date(msg._id.toString().substring(0, 8)).getTime()
-                                : new Date().getTime();
+                                ? new Date(parseInt(msg._id.toString().substring(0, 8), 16) * 1000).toISOString()
+                                : new Date().toISOString();
 
                             return {
                                 sender: msg.senderUsername === currentUser ? currentUser : selectedUser,
@@ -127,7 +151,7 @@ const ChatPage = () => {
             }
         };
         fetchMessages();
-    }, [selectedUser]);
+    }, [selectedUser, currentUser]);
 
     const handleSelectUser = (user) => {
         setSelectedUser(user);
@@ -146,19 +170,16 @@ const ChatPage = () => {
             setMessages(prevMessages => [...prevMessages, newMessage]);
         } else {
             console.error('WebSocket is not connected or no user selected');
+            // Optionally, attempt to reconnect here
+            if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+                debouncedConnect();
+            }
         }
     };
 
     return (
         <Box sx={{flexGrow: 1, p: 2}}>
             <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                    <UserList
-                        users={users}
-                        onSelectUser={handleSelectUser}
-                        selectedUser={selectedUser}
-                    />
-                </Grid>
                 <Grid item xs={12} md={8}>
                     <Paper elevation={3} sx={{p: 2}}>
                         <Button
@@ -178,6 +199,13 @@ const ChatPage = () => {
                             selectedUser={selectedUser}
                         />
                     </Paper>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <UserList
+                        users={users}
+                        onSelectUser={handleSelectUser}
+                        selectedUser={selectedUser}
+                    />
                 </Grid>
             </Grid>
         </Box>

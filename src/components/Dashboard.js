@@ -6,7 +6,9 @@ const StyledCard = styled(Card)(({ theme, subscribed }) => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: subscribed ? theme.palette.success.light : theme.palette.error.light,
+    backgroundColor: subscribed.toString() === 'true' ? theme.palette.success.light : theme.palette.error.light,
+    boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.5)',
+
 }));
 
 const Dashboard = ({ data, subscriptions }) => {
